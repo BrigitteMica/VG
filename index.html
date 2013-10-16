@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="d3.v2.js"></script>
+<title>barStack</title>  
+<style>
+.axis text {
+	font: 10px sans-serif;
+}
+.axis path, .axis line {
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+#tooltip {
+	width: 500px;
+	height: auto;
+	padding: 10px;
+	pointer-events: none;
+	}
+			
+#tooltip.hidden {
+	display: none;
+	}
+			
+#tooltip p {
+	margin: 0;
+	font-family: sans-serif;
+	font-size: 16px;
+	line-height: 20px;
+			}
+
+</style>
+</head>
+<body>
+
+
+<script type="text/javascript" >
+function barStack(d) {
+var l = d[0].length
+while (l--) {
+	var posBase = 0, negBase = 0;
+	d.forEach(function(d) {
+		d=d[l]
+		d.size = Math.abs(d.y)
+		if (d.y<0)  {
+			d.y0 = negBase
+			negBase-=d.size
+		} else
+		{ 
+			d.y0 = posBase = posBase + d.size
+		} 
+	})
+}
+d.extent= d3.extent(d3.merge(d3.merge(d.map(function(e) { return e.map(function(f) { return [f.y0,f.y0-f.size]})}))))
+return d
+}
+
+
+var ratiodata = [[{y:2.8},{y:4.2},{y:3.7},{y:3.4},{y:4.9},{y:4.1},{y:3.3},{y:2.7}],
+		   [{y:-1.5},{y:-1.9},{y:-1.3},{y:-2.9},{y:-2.4},{y:-2.8},{y:-1.5}, {y:-1.2}]]
+		   
+var poswordcount = [
+					[20, "able, accept, actual, careful, fortunately, gain, give(3), good, hope , insight,  learned (2), nice, pleasure, prompted, really, thank, tremendous"],
+					[22, "approve, assure, better,  cheerful, compliments, encouraged, give(2), gives, healthy, hope, know, love, merry, polished, return, romantic, satisfaction, save, sweet, thank, well"],
+					[41, "able, accommodation, allowing, better(4), considering, consulting, deal, enlightened, expensive, fine, forward, give, given, good(3), great(2), home, hope, interested, kind(2), kindness(2), like(5),  marvellous, naturally, practical, progress, progressed, sufficient, understand (2)"],
+					[36, " able, advisable, agreement, allow, allowed, approach, calm, charm, correct, frank, give, great, harmony, hope(2), important, intimate, irresistable, like(2), love, matters, noblest, perfectly, picturesque, productive, pure,  reasonable, recompense, right, sublime, subtly, truthful, understand(3)"],
+					[109," able, actually(2), agreement, allow, basic, benefits, best(4), better, calm, calmly(3), care(3), cared(2), clearly, confident , conscientiously, content(2), correctly, damn, deal, dear, delicate(3), delighted(2), dignified, easier,  enjoy, ensure, excellent, experienced, favour, fine, free, fresher, fun, gave, gentle(3), good(4), goodness, great, greatest, healthy, heartily, help(2), hope(2), humanitarian, humanity(4), importance, intrigues, intriguing, light(2), like(2), liking,  love(4), marvellous, natural, nicely(2), normal, normally, nursed, peaceful, plainly, please, pleasing, premise, pretty, shared, succeed, support, sympathetic,  thank(2), thorough, true(4), understand(4), worthwhile"],
+					[86, "assured, attractive, best(4), better(3), care, complete, confidence, content,  correctly, deal, dearly, delighted, distinctive, discuss, distinctive, enthusiastic, exactly, fresh, fresher, fluently, give(2), good(2), great(3), greater, greatest, grievance, health, help, home(2), hope(4), improvement, intelligence, kind(3), light(2), like(2), love(4), lovely, luxuriant, matters(2), mature, natural, normal(2), order, pay, peaceful, pleasant(2), pleased, pleasure(2), quality, saved, sincerity, splendid, trust, understand(2), useful, valuable, warm, well(3), wonderfully, worth"],
+					[28, "able, appealing, appeals, assure, best, delicate, easy, enjoying, ensure(2), given, glad, good(3), great, greatest, hoping, please, pleased, pleasure, progress, satisfaction, supporting,  thanks, warmly, well, wonderful"], 
+					[27, "advantage, amazing, appealing, considered, content, delicate, enthusiasm, exactly, fiery, fine, gained, give, gleaming, gleams, improve, informed, matter, pleasure, ripen, spare, splendid(2), stimulating, true, truth, well, wonderful"]
+					];
+
+var negwordcount = [
+					[11, "contrary, cost, desired, desperately, expense, fail, failure, powerless, seize, sick, suffer"],
+					[10, "angry, bloody, bore, contrary, damn, miserable, petty, regret, trouble, vexations"],
+					[14, "against, bad, cost, damned, exaggerations, expenses(2), hate, needed, regret, short, shrouded, unreasonable, vulgar"],
+					[31, "abandoning, absurd, coarseness, crude, damned, difficult, disagreeable, excluded, fault, filthiest, hunt, ill, illness(2), lost, lower, lowest, melancholic, mess, mistake, oddity(2), peculiar, poorest, pretentious, push, resentment, shrill, sorrow, strike, worse"],
+					[54, "abandoned, absurd(4), abusing, arguments, ashamed, attacked, avoid, bad, chase, coerce(2), cold,  commotion, complicated, deceived(2), defensive, difficult, disappointed, dislike, distract, drunk, exaggeration, fight(2), fool, foolish(2), fuss, hardest, hate, ill, impede, incapable, indifferent(2), mistake, need(2), poor(2), prejudices(2), slightest, sorrow, unfortunate, unwilling, upsets, useless, wrong(3)"],
+					[59, "abnormal, attack, barren, bored, broke, cheaper, coarse, conceit, concern, concerned, dead, deceives, dejected, difficult, doubt, embarrassed,embarrassment, empty, hard, harder, hurt, loss, melancholy, misfortune, mistake, need, odd, severe, unhappiness, unhappy, vain, war, waste, wild"],
+					[13, "alien, contrary, costs, dark, expensive, lacked, need, push, regrets, roughness, shortcomings, slightly, strike"],
+					[12, "dark, dead, disagreeable, disposal, doubt, exhausted, hindrance, inane, need, tired, toiled, worst"]
+					];
+		   
+		   	   
+var h=400
+var w=1300
+var margin=10
+var color = d3.scale.category10()
+
+var x = d3.scale.ordinal()
+	.domain(['172','191','192','249','250','251','255', '257'])
+	.rangeRoundBands([margin,w-margin], .1)
+
+var y = d3.scale.linear()
+	.range([h-margin,0+margin])
+
+var xAxis = d3.svg.axis().scale(x).orient("bottom").tickSize(6, 0)
+var yAxis = d3.svg.axis().scale(y).orient("left")
+
+barStack(ratiodata)
+y.domain(ratiodata.extent)
+
+var svg = d3.select("body")
+			.append("svg")
+			.attr("height",h)
+			.attr("width",w)
+
+	svg.selectAll(".series")
+	   .data(ratiodata)
+	   .enter()
+	   .append("g")
+	   .classed("series",true)
+	   .style("fill", function(d,i) { return color(i)})
+	   .selectAll("rect").data(Object)
+	   .enter()
+	   .append("rect")
+	   .attr("x",function(d,i) { return x(x.domain()[i])})
+	   .attr("y",function(d) { return y(d.y0)})
+	   .attr("height",function(d) { return y(0)-y(d.size)})
+	   .attr("width",x.rangeBand());
+	   
+	svg.selectAll("text.positive")   
+		.data(poswordcount)
+		.enter()
+		.append("text")
+		.text(function(d) {
+			 return d[0];
+			})
+			
+		.attr("x", function(d, i) {
+			   		return x(x.domain()[i]) + x.rangeBand() / 2;
+			})	
+		.attr("y", function(d) {
+			   		return 225;
+			})
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "13px")
+		.attr("fill", "#FFF")
+		.attr("text-anchor", "middle")
+		//.on("click", function(d) {console.log(d[1]);})
+		.on("click", function(d) {
+			//Update the tooltip position and value
+			d3.select("#tooltip")					
+			  .select("#value")
+			  .text(d[1]);
+			  //Show the tooltip
+					d3.select("#tooltip").classed("hidden", false);
+
+			   });
+		
+		
+		svg.selectAll("text.negative")   
+		.data(negwordcount)
+		.enter()
+		.append("text")
+		.text(function(d) {
+			 return d[0];
+			})
+			
+		.attr("x", function(d, i) {
+			   		return x(x.domain()[i]) + x.rangeBand() / 2;
+			})	
+		.attr("y", function(d) {
+			   		return 295;
+			})
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "13px")
+		.attr("fill", "#FFF")
+		.attr("text-anchor", "middle").on("click", function(d) {
+			//Update the tooltip position and value
+			d3.select("#tooltip")					
+			  .select("#value")
+			  .text(d[1]);
+			  //Show the tooltip
+					d3.select("#tooltip").classed("hidden", false);
+
+			   });
+			
+	   
+	svg.append("g").attr("class","axis x").attr("transform","translate (0 "+y(0)+")").call(xAxis);
+    svg.append("g").attr("class","axis y").attr("transform","translate ("+x(margin)+" 0)").call(yAxis);
+	   
+	   
+</script>
+
+<div id="tooltip" class="hidden">
+			<p><strong>Words:</strong></p>
+			<p><span id="value">100</span></p>
+		</div>
+</body>
+</html>
